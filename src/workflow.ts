@@ -19,6 +19,11 @@ export class ArticleWorkflow {
     schema: string;
   };
   private outputDir: string;
+  private webResearch: {
+    enabled: boolean;
+    provider?: 'brave' | 'tavily';
+    apiKey?: string;
+  };
 
   constructor() {
     // Determina o provedor
@@ -49,6 +54,21 @@ export class ArticleWorkflow {
       schema: process.env.MODEL_SCHEMA || defaultModel
     };
 
+    // Configura web research
+    const webResearchEnabled = process.env.ENABLE_WEB_RESEARCH === 'true';
+    const webSearchProvider = process.env.WEB_SEARCH_PROVIDER as 'brave' | 'tavily' | undefined;
+    const webSearchApiKey = webSearchProvider === 'brave'
+      ? process.env.BRAVE_API_KEY
+      : webSearchProvider === 'tavily'
+        ? process.env.TAVILY_API_KEY
+        : undefined;
+
+    this.webResearch = {
+      enabled: webResearchEnabled && !!webSearchProvider && !!webSearchApiKey,
+      provider: webSearchProvider,
+      apiKey: webSearchApiKey
+    };
+
     this.outputDir = process.env.OUTPUT_DIR || './output';
   }
 
@@ -57,7 +77,8 @@ export class ArticleWorkflow {
     console.log('🚀 WORKFLOW DE CRIAÇÃO DE ARTIGO - PLANOS DE SAÚDE');
     console.log('═══════════════════════════════════════════════════════════');
     console.log(`📋 Tema: ${topic}`);
-    console.log(`🔌 Provedor: ${this.provider.toUpperCase()}`);
+    console.log(`🔌 Provedor IA: ${this.provider.toUpperCase()}`);
+    console.log(`🌐 Web Research: ${this.webResearch.enabled ? `HABILITADO (${this.webResearch.provider?.toUpperCase()})` : 'DESABILITADO'}`);
     console.log(`🤖 Modelos:`);
     console.log(`   • Pesquisa: ${this.models.research}`);
     console.log(`   • Escrita: ${this.models.writer}`);
@@ -76,7 +97,14 @@ export class ArticleWorkflow {
       // ETAPA 1: Pesquisa
       console.log('📚 ETAPA 1/4: PESQUISA PROFUNDA');
       console.log('───────────────────────────────────────────────────────────');
-      const researchAgent = new ResearchAgent(this.apiKey, this.models.research, this.provider);
+      const researchAgent = new ResearchAgent(
+        this.apiKey,
+        this.models.research,
+        this.provider,
+        this.webResearch.enabled,
+        this.webResearch.provider,
+        this.webResearch.apiKey
+      );
       const researchResult = await researchAgent.execute(topic);
 
       if (!researchResult.success) {
