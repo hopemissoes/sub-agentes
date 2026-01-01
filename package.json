@@ -7,8 +7,9 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
-    "dev": "tsx src/index.ts",
-    "workflow": "tsx src/workflow.ts"
+    "dev": "npx tsx src/index.ts",
+    "workflow": "npx tsx src/workflow.ts",
+    "workflow:compiled": "node dist/workflow.js"
   },
   "keywords": [
     "agents",
