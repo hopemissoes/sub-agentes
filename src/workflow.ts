@@ -8,7 +8,26 @@ import { WorkflowContext } from './types/index.js';
 // Carrega variáveis de ambiente
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-dotenv.config({ path: path.join(__dirname, '..', '.env') });
+const envPath = path.join(__dirname, '..', '.env');
+
+// Debug: mostra o caminho do .env e se foi carregado
+console.log('🔍 DEBUG: Caminho do .env:', envPath);
+const envResult = dotenv.config({ path: envPath });
+if (envResult.error) {
+  console.log('❌ ERRO ao carregar .env:', envResult.error);
+} else {
+  console.log('✓ Arquivo .env carregado com sucesso');
+}
+
+// Debug: mostra quais variáveis importantes foram carregadas
+console.log('🔍 DEBUG: Variáveis carregadas:');
+console.log('  - API_PROVIDER:', process.env.API_PROVIDER || '(não definido)');
+console.log('  - ANTHROPIC_API_KEY:', process.env.ANTHROPIC_API_KEY ? '(definido)' : '(NÃO definido)');
+console.log('  - OPENROUTER_API_KEY:', process.env.OPENROUTER_API_KEY ? '(definido)' : '(NÃO definido)');
+console.log('  - ENABLE_WEB_RESEARCH:', process.env.ENABLE_WEB_RESEARCH || '(não definido)');
+console.log('  - WEB_SEARCH_PROVIDER:', process.env.WEB_SEARCH_PROVIDER || '(não definido)');
+console.log('  - BRAVE_API_KEY:', process.env.BRAVE_API_KEY ? '(definido)' : '(NÃO definido)');
+console.log('');
 
 type APIProvider = 'anthropic' | 'openrouter';
 
