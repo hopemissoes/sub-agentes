@@ -46,9 +46,12 @@ export class WebSearchService {
   }
 
   /**
-   * Busca usando Brave Search API
+   * Busca usando Brave Search API com retry automático
    */
-  private async searchBrave(query: string): Promise<SearchResult[]> {
+  private async searchBrave(query: string, retryCount = 0): Promise<SearchResult[]> {
+    const maxRetries = 3;
+    const baseDelay = 2000; // 2 segundos
+
     try {
       const response = await axios.get('https://api.search.brave.com/res/v1/web/search', {
         headers: {
@@ -80,7 +83,14 @@ export class WebSearchService {
       return results;
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.status === 429) {
-        console.error('  ⚠️  Rate limit atingido. Aguarde um momento.');
+        if (retryCount < maxRetries) {
+          const delay = baseDelay * Math.pow(2, retryCount); // Backoff exponencial
+          console.log(`  ⏳ Rate limit - aguardando ${delay/1000}s antes de tentar novamente...`);
+          await this.sleep(delay);
+          return this.searchBrave(query, retryCount + 1);
+        } else {
+          console.error('  ⚠️  Rate limit - máximo de tentativas atingido.');
+        }
       }
       throw error;
     }
@@ -130,7 +140,7 @@ export class WebSearchService {
   }
 
   /**
-   * Realiza múltiplas buscas em paralelo
+   * Realiza múltiplas buscas sequencialmente para evitar rate limit
    */
   async searchMultiple(queries: string[]): Promise<SearchResult[]> {
     console.log(`\n🔎 Realizando ${queries.length} buscas...`);
@@ -138,26 +148,22 @@ export class WebSearchService {
     const allResults: SearchResult[] = [];
     const seenUrls = new Set<string>();
 
-    // Processa em lotes para não sobrecarregar a API
-    const batchSize = 3;
-    for (let i = 0; i < queries.length; i += batchSize) {
-      const batch = queries.slice(i, i + batchSize);
-      const batchPromises = batch.map(q => this.search(q));
-      const batchResults = await Promise.all(batchPromises);
+    // Processa sequencialmente para evitar rate limit (Brave Free Tier)
+    for (let i = 0; i < queries.length; i++) {
+      const query = queries[i];
+      const results = await this.search(query);
 
-      for (const results of batchResults) {
-        for (const result of results) {
-          // Remove duplicatas por URL
-          if (!seenUrls.has(result.url)) {
-            seenUrls.add(result.url);
-            allResults.push(result);
-          }
+      for (const result of results) {
+        // Remove duplicatas por URL
+        if (!seenUrls.has(result.url)) {
+          seenUrls.add(result.url);
+          allResults.push(result);
         }
       }
 
-      // Pequena pausa entre lotes
-      if (i + batchSize < queries.length) {
-        await this.sleep(1000);
+      // Pausa entre cada busca para respeitar rate limit
+      if (i < queries.length - 1) {
+        await this.sleep(1500); // 1.5 segundos entre buscas
       }
     }
 
