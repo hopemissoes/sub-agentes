@@ -163,7 +163,7 @@ export class WebSearchService {
 
       // Pausa entre cada busca para respeitar rate limit
       if (i < queries.length - 1) {
-        await this.sleep(1500); // 1.5 segundos entre buscas
+        await this.sleep(3000); // 3 segundos entre buscas (rate limit do Brave Free)
       }
     }
 

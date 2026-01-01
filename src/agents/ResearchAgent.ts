@@ -84,9 +84,9 @@ Lembre-se de retornar a resposta no formato JSON especificado.`;
       aiModel: this.model,
       searchProvider: this.searchProvider,
       searchApiKey: this.searchApiKey,
-      numberOfQueries: 15,        // 15 queries diferentes
-      resultsPerQuery: 10,        // 10 resultados por query = 150 URLs
-      maxUrlsToExtract: 100       // Extrai conteúdo de até 100 páginas
+      numberOfQueries: 8,         // 8 queries diferentes (reduzido para evitar rate limit)
+      resultsPerQuery: 8,         // 8 resultados por query = 64 URLs
+      maxUrlsToExtract: 50        // Extrai conteúdo de até 50 páginas
     });
 
     // Realiza a pesquisa profunda
