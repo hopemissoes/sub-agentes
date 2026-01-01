@@ -3,8 +3,8 @@ import { AgentResponse, ReviewResult, ArticleResult } from '../types/index.js';
 import { REVIEWER_AGENT_CONFIG } from '../config/prompts.js';
 
 export class ReviewerAgent extends BaseAgent {
-  constructor(apiKey: string, model?: string) {
-    super(REVIEWER_AGENT_CONFIG, apiKey, model);
+  constructor(apiKey: string, model?: string, provider?: 'anthropic' | 'openrouter') {
+    super(REVIEWER_AGENT_CONFIG, apiKey, model, provider);
   }
 
   async execute(article: ArticleResult): Promise<AgentResponse> {

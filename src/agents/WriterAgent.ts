@@ -3,8 +3,8 @@ import { AgentResponse, ArticleResult, ResearchResult } from '../types/index.js'
 import { WRITER_AGENT_CONFIG } from '../config/prompts.js';
 
 export class WriterAgent extends BaseAgent {
-  constructor(apiKey: string, model?: string) {
-    super(WRITER_AGENT_CONFIG, apiKey, model);
+  constructor(apiKey: string, model?: string, provider?: 'anthropic' | 'openrouter') {
+    super(WRITER_AGENT_CONFIG, apiKey, model, provider);
   }
 
   async execute(research: ResearchResult): Promise<AgentResponse> {

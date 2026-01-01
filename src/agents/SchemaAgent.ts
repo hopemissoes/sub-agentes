@@ -3,8 +3,8 @@ import { AgentResponse, SchemaResult, ArticleResult } from '../types/index.js';
 import { SCHEMA_AGENT_CONFIG } from '../config/prompts.js';
 
 export class SchemaAgent extends BaseAgent {
-  constructor(apiKey: string, model?: string) {
-    super(SCHEMA_AGENT_CONFIG, apiKey, model);
+  constructor(apiKey: string, model?: string, provider?: 'anthropic' | 'openrouter') {
+    super(SCHEMA_AGENT_CONFIG, apiKey, model, provider);
   }
 
   async execute(article: ArticleResult): Promise<AgentResponse> {

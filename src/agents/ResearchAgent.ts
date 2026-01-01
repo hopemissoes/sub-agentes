@@ -3,8 +3,8 @@ import { AgentResponse, ResearchResult } from '../types/index.js';
 import { RESEARCH_AGENT_CONFIG } from '../config/prompts.js';
 
 export class ResearchAgent extends BaseAgent {
-  constructor(apiKey: string, model?: string) {
-    super(RESEARCH_AGENT_CONFIG, apiKey, model);
+  constructor(apiKey: string, model?: string, provider?: 'anthropic' | 'openrouter') {
+    super(RESEARCH_AGENT_CONFIG, apiKey, model, provider);
   }
 
   async execute(topic: string): Promise<AgentResponse> {

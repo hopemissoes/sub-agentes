@@ -7,19 +7,49 @@ import { WorkflowContext } from './types/index.js';
 // Carrega variáveis de ambiente
 dotenv.config();
 
+type APIProvider = 'anthropic' | 'openrouter';
+
 export class ArticleWorkflow {
   private apiKey: string;
-  private model: string;
+  private provider: APIProvider;
+  private models: {
+    research: string;
+    writer: string;
+    reviewer: string;
+    schema: string;
+  };
   private outputDir: string;
 
   constructor() {
-    this.apiKey = process.env.ANTHROPIC_API_KEY || '';
-    this.model = process.env.MODEL || 'claude-sonnet-4-5-20250929';
-    this.outputDir = process.env.OUTPUT_DIR || './output';
+    // Determina o provedor
+    const providerEnv = process.env.API_PROVIDER || 'anthropic';
+    this.provider = providerEnv as APIProvider;
 
-    if (!this.apiKey) {
-      throw new Error('ANTHROPIC_API_KEY não encontrada no arquivo .env');
+    // Pega a chave da API correta
+    if (this.provider === 'anthropic') {
+      this.apiKey = process.env.ANTHROPIC_API_KEY || '';
+      if (!this.apiKey) {
+        throw new Error('ANTHROPIC_API_KEY não encontrada no arquivo .env');
+      }
+    } else if (this.provider === 'openrouter') {
+      this.apiKey = process.env.OPENROUTER_API_KEY || '';
+      if (!this.apiKey) {
+        throw new Error('OPENROUTER_API_KEY não encontrada no arquivo .env');
+      }
+    } else {
+      throw new Error(`Provedor inválido: ${providerEnv}. Use 'anthropic' ou 'openrouter'`);
     }
+
+    // Configura modelos por agente
+    const defaultModel = process.env.MODEL || 'claude-sonnet-4-5-20250929';
+    this.models = {
+      research: process.env.MODEL_RESEARCH || defaultModel,
+      writer: process.env.MODEL_WRITER || defaultModel,
+      reviewer: process.env.MODEL_REVIEWER || defaultModel,
+      schema: process.env.MODEL_SCHEMA || defaultModel
+    };
+
+    this.outputDir = process.env.OUTPUT_DIR || './output';
   }
 
   async execute(topic: string): Promise<void> {
@@ -27,7 +57,12 @@ export class ArticleWorkflow {
     console.log('🚀 WORKFLOW DE CRIAÇÃO DE ARTIGO - PLANOS DE SAÚDE');
     console.log('═══════════════════════════════════════════════════════════');
     console.log(`📋 Tema: ${topic}`);
-    console.log(`🤖 Modelo: ${this.model}`);
+    console.log(`🔌 Provedor: ${this.provider.toUpperCase()}`);
+    console.log(`🤖 Modelos:`);
+    console.log(`   • Pesquisa: ${this.models.research}`);
+    console.log(`   • Escrita: ${this.models.writer}`);
+    console.log(`   • Revisão: ${this.models.reviewer}`);
+    console.log(`   • Schemas: ${this.models.schema}`);
     console.log('═══════════════════════════════════════════════════════════\n');
 
     const context: WorkflowContext = { topic };
@@ -41,7 +76,7 @@ export class ArticleWorkflow {
       // ETAPA 1: Pesquisa
       console.log('📚 ETAPA 1/4: PESQUISA PROFUNDA');
       console.log('───────────────────────────────────────────────────────────');
-      const researchAgent = new ResearchAgent(this.apiKey, this.model);
+      const researchAgent = new ResearchAgent(this.apiKey, this.models.research, this.provider);
       const researchResult = await researchAgent.execute(topic);
 
       if (!researchResult.success) {
@@ -55,7 +90,7 @@ export class ArticleWorkflow {
       // ETAPA 2: Escrita do Artigo
       console.log('✍️  ETAPA 2/4: PRODUÇÃO DO ARTIGO HTML');
       console.log('───────────────────────────────────────────────────────────');
-      const writerAgent = new WriterAgent(this.apiKey, this.model);
+      const writerAgent = new WriterAgent(this.apiKey, this.models.writer, this.provider);
       const articleResult = await writerAgent.execute(context.research);
 
       if (!articleResult.success) {
@@ -70,7 +105,7 @@ export class ArticleWorkflow {
       // ETAPA 3: Revisão
       console.log('🔍 ETAPA 3/4: REVISÃO DO ARTIGO');
       console.log('───────────────────────────────────────────────────────────');
-      const reviewerAgent = new ReviewerAgent(this.apiKey, this.model);
+      const reviewerAgent = new ReviewerAgent(this.apiKey, this.models.reviewer, this.provider);
       const reviewResult = await reviewerAgent.execute(context.article);
 
       if (!reviewResult.success) {
@@ -90,7 +125,7 @@ export class ArticleWorkflow {
       // ETAPA 4: Schemas
       console.log('🏗️  ETAPA 4/4: GERAÇÃO DE SCHEMAS');
       console.log('───────────────────────────────────────────────────────────');
-      const schemaAgent = new SchemaAgent(this.apiKey, this.model);
+      const schemaAgent = new SchemaAgent(this.apiKey, this.models.schema, this.provider);
       const finalArticle = context.review.revisedHtml
         ? { ...context.article, html: context.review.revisedHtml }
         : context.article;
