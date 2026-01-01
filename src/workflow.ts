@@ -118,6 +118,11 @@ export class ArticleWorkflow {
       // ETAPA 2: Escrita do Artigo
       console.log('✍️  ETAPA 2/4: PRODUÇÃO DO ARTIGO HTML');
       console.log('───────────────────────────────────────────────────────────');
+
+      if (!context.research) {
+        throw new Error('Pesquisa não disponível');
+      }
+
       const writerAgent = new WriterAgent(this.apiKey, this.models.writer, this.provider);
       const articleResult = await writerAgent.execute(context.research);
 
@@ -126,6 +131,10 @@ export class ArticleWorkflow {
       }
 
       context.article = articleResult.data;
+      if (!context.article) {
+        throw new Error('Artigo não foi gerado');
+      }
+
       await this.saveHtml(outputFolder, '2-article.html', context.article.html);
       await this.saveJson(outputFolder, '2-article-metadata.json', context.article);
       console.log('✓ Artigo salvo em: 2-article.html\n');
@@ -133,6 +142,7 @@ export class ArticleWorkflow {
       // ETAPA 3: Revisão
       console.log('🔍 ETAPA 3/4: REVISÃO DO ARTIGO');
       console.log('───────────────────────────────────────────────────────────');
+
       const reviewerAgent = new ReviewerAgent(this.apiKey, this.models.reviewer, this.provider);
       const reviewResult = await reviewerAgent.execute(context.article);
 
@@ -141,6 +151,10 @@ export class ArticleWorkflow {
       }
 
       context.review = reviewResult.data;
+      if (!context.review) {
+        throw new Error('Revisão não foi gerada');
+      }
+
       await this.saveJson(outputFolder, '3-review.json', context.review);
 
       // Se houver versão revisada, salva também
@@ -153,6 +167,7 @@ export class ArticleWorkflow {
       // ETAPA 4: Schemas
       console.log('🏗️  ETAPA 4/4: GERAÇÃO DE SCHEMAS');
       console.log('───────────────────────────────────────────────────────────');
+
       const schemaAgent = new SchemaAgent(this.apiKey, this.models.schema, this.provider);
       const finalArticle = context.review.revisedHtml
         ? { ...context.article, html: context.review.revisedHtml }
@@ -165,6 +180,10 @@ export class ArticleWorkflow {
       }
 
       context.schemas = schemaResult.data;
+      if (!context.schemas) {
+        throw new Error('Schemas não foram gerados');
+      }
+
       await this.saveJson(outputFolder, '4-schemas.json', context.schemas);
       console.log('✓ Schemas salvos em: 4-schemas.json\n');
 
@@ -188,7 +207,7 @@ export class ArticleWorkflow {
       console.log('  • 2-article.html           - Artigo original');
       console.log('  • 2-article-metadata.json  - Metadados do artigo');
       console.log('  • 3-review.json            - Resultado da revisão');
-      if (context.review.revisedHtml) {
+      if (context.review && context.review.revisedHtml) {
         console.log('  • 3-article-revised.html   - Artigo revisado');
       }
       console.log('  • 4-schemas.json           - Schemas JSON-LD');
